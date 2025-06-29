@@ -1,3 +1,6 @@
+import os
+from selenium.webdriver.chrome.options import Options
+
 import pytest
 from selenium import webdriver
 from selenium.common import TimeoutException
@@ -10,6 +13,28 @@ BASE_URL = "http://158.160.87.146:5000"
 REGISTER_ENDPOINT = f"{BASE_URL}/api/register"
 LOGIN_ENDPOINT = f"{BASE_URL}/api/auth"
 USERS_PAGE = f"{BASE_URL}/users-page"
+
+@pytest.fixture(scope="session")
+def browser():
+
+    use_remote = os.getenv("USE_REMOTE", "false").lower() == "true"
+
+    if use_remote:
+        options = Options()
+        options.add_argument("--headless")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.set_capability("browserName", "chrome")
+        driver = webdriver.Remote(
+            command_executor="http://localhost:4444/wd/hub",
+            options=options
+        )
+    else:
+        driver = webdriver.Chrome()
+
+    driver.implicitly_wait(5)
+    yield driver
+    driver.quit()
 
 def clear_form(browser):
     for field in ["name", "age", "gender", "date_birthday"]:
@@ -49,14 +74,6 @@ def token():
     resp = requests.post(LOGIN_ENDPOINT, json={"login": login, "password": password})
     token = resp.json().get("token")
     return token
-
-
-@pytest.fixture(scope="session")
-def browser():
-    driver = webdriver.Chrome()
-    driver.implicitly_wait(5)
-    yield driver
-    driver.quit()
 
 
 @pytest.fixture(scope="session")

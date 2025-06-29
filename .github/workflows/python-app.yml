@@ -1,51 +1,41 @@
-name: Run Selenium UI tests
+name: Run tests
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch:
+on: [push, pull_request]
 
 jobs:
-  ui-tests:
+  test:
     runs-on: ubuntu-latest
 
     services:
       selenium:
-        image: selenium/standalone-chrome:123.0
+        image: selenium/standalone-chrome
         ports:
           - 4444:4444
-        options: >-
-          --shm-size=2g
+
+    env:
+      USE_REMOTE: "true"
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: 3.11
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Wait for Selenium container to be ready
+      - name: Wait for Selenium to start
         run: |
           for i in {1..20}; do
-            if curl -s http://localhost:4444/wd/hub/status | grep -q '"ready":true'; then
-              echo "Selenium is ready"
-              break
-            fi
+            curl -s http://localhost:4444/status | grep -q '"ready": true' && break
             echo "Waiting for Selenium..."
             sleep 1
           done
 
       - name: Run tests
-        env:
-          SELENIUM_REMOTE_URL: http://localhost:4444/wd/hub
-        run: |
-          pytest tests/
+        run: pytest tests/
