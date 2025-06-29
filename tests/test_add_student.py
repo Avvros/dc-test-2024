@@ -22,9 +22,6 @@ def browser():
     if use_remote:
         options = Options()
         options.add_argument("--headless")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-        options.set_capability("browserName", "chrome")
         driver = webdriver.Remote(
             command_executor="http://localhost:4444/wd/hub",
             options=options
